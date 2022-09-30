@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "aux_libs/pthread_info.h"
+#include "aux_libs/pthread_aux.h"
 
 #include <sched.h>
 #include <assert.h>
@@ -34,19 +34,22 @@
 //     long     tv_nsec;       /* nanoseconds */
 // };
 
-long calc_func_ripple(void (*func)(int,int)){
-    int i;
-    // time_t max_dtime = 0, time_1, time_2;
-    struct timespec time_1 = {0,0}, time_2 = {0,0};
-    long max_dtime = 0;
-    for(i = 0; i < N_SAMPLES; i++){
-        clock_gettime(CLOCK_MONOTONIC, &time_1);
-        func(CLASS,GROUP);
-        clock_gettime(CLOCK_MONOTONIC, &time_2);
-        max_dtime = time_2.tv_nsec - time_1.tv_nsec;
-        if(max_dtime < time_2.tv_nsec - time_1.tv_nsec)
-            max_dtime = time_2.tv_nsec - time_1.tv_nsec;
-    }
+
+// sec e nsec devem ser utilizados em conjunto
+struct timespec calc_func_ripple(void (*func)(int,int)){
+    // int i;
+    // time_t max_dtime_nsec= 0, time_1, time_2;
+    // struct timespec time_1 = {0,0}, time_2 = {0,0}, max_dtime = {0,0};
+    struct timespec max_dtime = {0,0};
+    // for(i = 0; i < N_SAMPLES; i++){
+    //     clock_gettime(CLOCK_MONOTONIC, &time_1);
+    //     func(CLASS,GROUP);
+    //     clock_gettime(CLOCK_MONOTONIC, &time_2);
+    //     max_dtime_sec = time_2.tv_sec - time_1.tv_sec;
+    //     max_dtime_nsec = time_2.tv_nsec - time_1.tv_nsec;
+    //     if(max_dtime_nsec < time_2.tv_nsec - time_1.tv_nsec)
+    //         max_dtime_nsec = time_2.tv_nsec - time_1.tv_nsec;
+    // }
 
     return max_dtime;
 }
@@ -60,64 +63,38 @@ void bin(unsigned n, size_t size)
 
 int main(int argc, char *argv[]){
 
-    cpu_set_t *setp;
+    // Verificando atributos iniciais do thread main
 
-    int num_cpus = 20; size_t size;
+    int s;
 
-    setp = CPU_ALLOC(num_cpus);
+    pthread_t main_thread = pthread_self();
 
-    if(setp == NULL){
-        perror("CPU_ALLOC()");
-        exit(EXIT_FAILURE);
-    }
+    cpu_set_t *cpu_set = malloc(sizeof(cpu_set_t));
 
+    printf("main_thread:\n");
 
-    // CPU_FREE(cpusetp);
+    printf("\tDefault state:\n");
 
-    size = CPU_ALLOC_SIZE(num_cpus);
+    display_pthread_affinity(main_thread, "\t\t");
 
-    printf("Size: %i\nN cpus %d\n",(int) size,CPU_COUNT_S(size,setp));
+    // // Alterando atributos do thread main
 
-    CPU_ZERO(setp);
-    CPU_FREE(setp);
+    printf("\tChanged state:\n");
 
-    printf("Size: %i\nN cpus %d\n",(int) size,CPU_COUNT_S(size,setp));
+    CPU_ZERO(cpu_set);
 
-    // // num_cpus = atoi(argv[1]);
+    CPU_SET(0,cpu_set);
 
-    // cpusetp = CPU_ALLOC(num_cpus);
-    // if (cpusetp == NULL) {
-    //     perror("CPU_ALLOC");
-    //     exit(EXIT_FAILURE);
-    // }
+    // Utilizar for para alocar mais cpu's
 
-    // size = CPU_ALLOC_SIZE(num_cpus);
+    s = pthread_setaffinity_np(main_thread,sizeof(*cpu_set), cpu_set);
 
-    // printf("Size: %d\n",(int) size);
-
-    // CPU_ZERO_S(size, cpusetp);
-    // for (int cpu = 0; cpu < num_cpus; cpu += 2)
-    //     CPU_SET_S(cpu, size, cpusetp);
-
-    // printf("CPU_COUNT() of set:    %d\n", CPU_COUNT_S(size, cpusetp));
-
-    // CPU_FREE(cpusetp);
-    // exit(EXIT_SUCCESS);
-    
-    printf("Main thread attr:\n"); display_thread_attributes(pthread_self(), "\t");
+    display_pthread_affinity(main_thread, "\t\t");
 
 
-    // int n_aff = sched_getaffinity(pid_t pid, size_t cpusetsize,cpu_set_t *mask);
 
-    // setpriority(PRIO_PROCESS, 0, -20);
 
-    // int i;
-
-    // for(i = 0; i < 20; i++){
-    //     printf("f%i| Time: %.4f (ms) || ",1,calc_func_ripple(f1)/(1000.0*1000.0));
-    //     printf("f%i| Time: %.4f (ms) || ",2,calc_func_ripple(f2)/(1000.0*1000.0));
-    //     printf("f%i| Time: %.4f (ms)\n",3,calc_func_ripple(f3)/(1000.0*1000.0));
-    // }
+    printf("main_thread attr:\n"); display_thread_sched_attr(pthread_self(), "\t");
 
     return 0;
 }
