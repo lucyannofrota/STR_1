@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "func.h": "c",
+        "stdio.h": "c",
+        "pthread.h": "c",
+        "stdlib.h": "c",
+        "time.h": "c",
+        "pthread_info.h": "c",
+        "resource.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
