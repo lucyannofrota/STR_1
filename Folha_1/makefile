@@ -15,8 +15,8 @@ pthread_aux.o: aux_libs/pthread_aux.c
 # problema_1
 
 problema_1: problema_1.o
-	# gcc -Wall -O2 -g3 problema_1.c func/func.o pthread_aux.o -o problema_1 ${LIBS}
-	gcc -Wall -g3 problema_1.c func/func.o pthread_aux.o -o problema_1 ${LIBS}
+	gcc -Wall -O2 -g3 problema_1.c func/func.o pthread_aux.o -o problema_1 ${LIBS}
+	# gcc -Wall -g3 problema_1.c func/func.o pthread_aux.o -o problema_1 ${LIBS}
 
 problema_1.o: problema_1.c
 	gcc -Wall -g3 -c problema_1.c -o problema_1.o

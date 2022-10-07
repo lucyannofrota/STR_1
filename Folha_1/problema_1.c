@@ -1,4 +1,6 @@
-#define N_SAMPLES 1024
+#define N_SAMPLES 32
+
+#define PRINT_MULTP 1000/1000000000.0
 
 #define _GNU_SOURCE
 
@@ -34,29 +36,76 @@
 //     long     tv_nsec;       /* nanoseconds */
 // };
 
-
 // sec e nsec devem ser utilizados em conjunto
-long calc_func_ripple(void (*func)(int,int)){
+
+void clk_wait(long n_sec){
+    // https://stackoverflow.com/questions/20332382/linux-sleeping-with-clock-nanosleep
+
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+
+    // Add the time you want to sleep
+    deadline.tv_nsec += n_sec;
+
+    // Normalize the time to account for the second boundary
+    if(deadline.tv_nsec >= 1000000000) {
+        deadline.tv_nsec -= 1000000000;
+        deadline.tv_sec++;
+    }
+    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
+}
+
+void print_timespec(struct timespec t,char *prefix){
+    printf("%s sec: %i\n%snsec: %ld\n",prefix,(int)t.tv_sec,prefix,t.tv_nsec);
+}
+
+struct timespec sub_timespec(struct timespec tim_1,struct timespec tim_2){
+    struct timespec result;
+    result.tv_sec = tim_1.tv_sec - tim_2.tv_sec;
+    result.tv_nsec = tim_1.tv_nsec - tim_2.tv_nsec;
+    if(result.tv_nsec < 0){
+        result.tv_sec -= 1;
+        result.tv_nsec += 1000000000;
+    }
+    // print_timespec(result,"");
+    return result;
+}
+
+double timespec_to_double_ms(struct timespec time){
+    return ((time.tv_sec*1000000000+time.tv_nsec)/1000000000.0)*1000; // ms
+}
+
+void calc_func_ripple(void (*func)(int,int), long *dtime, struct timespec *dtime_spec){
     int i;
+    // double dtime = 0;
     // time_t max_dtime_nsec= 0, time_1, time_2;
     // struct timespec time_1 = {0,0}, time_2 = {0,0}, max_dtime = {0,0};
-    struct timespec time1 = {0,0}, time2 = {0,0}, max_dtime = {0,0};
+    struct timespec time1 = {0,0}, time2 = {0,0};
 
     for(i = 0; i < N_SAMPLES; i++){
-        clock_gettime(CLOCK_MONOTONIC, &time1);
+        // clock_gettime(CLOCK_MONOTONIC, &time1);
+        clock_gettime(CLOCK_REALTIME, &time1);
+        // CLOCK_REALTIME
         func(CLASS,GROUP);
-        clock_gettime(CLOCK_MONOTONIC, &time2);
-        if(max_dtime.tv_sec <= time2.tv_sec-time1.tv_sec){
-            // printf("sec: %ld\n",(long)max_dtime.tv_sec);
-            max_dtime.tv_sec = time2.tv_sec-time1.tv_sec;
-            if(max_dtime.tv_nsec < time2.tv_nsec-time1.tv_nsec){
-                max_dtime.tv_nsec = time2.tv_nsec-time1.tv_nsec;
-            }
-        }
+        // clock_gettime(CLOCK_MONOTONIC, &time2);
+        clock_gettime(CLOCK_REALTIME, &time2);
+        dtime[i] = (((long)time2.tv_sec)-((long)time1.tv_sec))*1000000000+time2.tv_nsec-time1.tv_nsec;
+        dtime_spec[i] = sub_timespec(time2,time1);
+        // if(max_dtime < dtime[i]) max_dtime = dtime[i];
+        clk_wait((long)5*1000000000/1000); // 3 ms
+        // {
+        //     // printf("sec: %ld\n",(long)max_dtime.tv_sec);
+        //     if()
+        //     max_dtime.tv_sec = time2.tv_sec-time1.tv_sec;
+        //     if(max_dtime.tv_nsec < time2.tv_nsec-time1.tv_nsec){
+        //         max_dtime.tv_nsec = time2.tv_nsec-time1.tv_nsec;
+        //     }
+        // }
         // max_dtime_sec = time_2.tv_sec - time_1.tv_sec;
         // max_dtime_nsec = time_2.tv_nsec - time_1.tv_nsec;
         // if(max_dtime_nsec < time_2.tv_nsec - time_1.tv_nsec)
         //     max_dtime_nsec = time_2.tv_nsec - time_1.tv_nsec;
+        // clock_nanosleep()
     }
 
     // for(i = 0; i < N_SAMPLES; i++){
@@ -69,11 +118,15 @@ long calc_func_ripple(void (*func)(int,int)){
     //         max_dtime_nsec = time_2.tv_nsec - time_1.tv_nsec;
     // }
 
-    long dtime = ((long)max_dtime.tv_sec)*1000000000+max_dtime.tv_nsec;
+    // long dtime = ((long)max_dtime.tv_sec)*1000000000+max_dtime.tv_nsec;
+    // if(max_dtime.tv_nsec < 0){
+    //     dtime -= 1000000000;
+    // }
+    // long dtime = ((long)max_dtime.tv_sec)*1000000000+max_dtime.tv_nsec;
 
     // printf("Nsec: %ld\n",dtime);
 
-    return dtime;
+    // return max_dtime;
     // return (float) dtime/1000000000.0;
 }
 
@@ -102,33 +155,19 @@ long calc_func_ripple(void (*func)(int,int)){
 //     pthread_exit(ret);
 // }
 
-// static void display_sched_attr(int policy, struct sched_param *param){
-//     printf("    policy=%s, priority=%d\n",
-//             (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-//             (policy == SCHED_RR)    ? "SCHED_RR" :
-//             (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-//             "???",
-//             param->sched_priority);
-// }
-
-// static void display_thread_sched_attr(char *msg){
-//     int policy, s;
-//     struct sched_param param;
-
-//     s = pthread_getschedparam(pthread_self(), &policy, &param);
-//     if (s != 0)
-//         handle_error_en(s, "pthread_getschedparam");
-
-//     printf("%s\n", msg);
-//     display_sched_attr(policy, &param);
-// }
-
 static void *thread_start(void *arg){
     // int rep = 16, pot = 4;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t");
 
-    long t1 = calc_func_ripple(f1), t2 = calc_func_ripple(f2), t3 = calc_func_ripple(f3);
+    long dtime_1[N_SAMPLES], dtime_2[N_SAMPLES], dtime_3[N_SAMPLES];
+
+    struct timespec dtime_spec_1[N_SAMPLES], dtime_spec_2[N_SAMPLES], dtime_spec_3[N_SAMPLES];
+
+    // long t1 = calc_func_ripple(f1,dtime_1,dtime_spec_1), t2 = calc_func_ripple(f2,dtime_2,dtime_spec_2), t3 = calc_func_ripple(f3,dtime_3,dtime_spec_3);
+    calc_func_ripple(f1,dtime_1,dtime_spec_1);
+    calc_func_ripple(f2,dtime_2,dtime_spec_2);
+    calc_func_ripple(f3,dtime_3,dtime_spec_3);
 
     // int i;
 
@@ -140,7 +179,14 @@ static void *thread_start(void *arg){
     //     printf("f1 = %2.5f | f2 = %2.5f | f3 = %2.5f\n",(float) t1/1000000000.0,(float) t2/1000000000.0,(float) t3/1000000000.0);
     // }
 
-    printf("Max times (%i samples): \n\tf1 = %2.5f | f2 = %2.5f | f3 = %2.5f\n",N_SAMPLES,(float) t1/1000000000.0,(float) t2/1000000000.0,(float) t3/1000000000.0);
+
+    printf("Times (%i samples):",N_SAMPLES);
+    for(int i = 0; i < N_SAMPLES; i++){
+        printf("\t1 | f1 = %2.5f | f2 = %2.5f | f3 = %2.5f\n",dtime_1[i]*PRINT_MULTP,dtime_2[i]*PRINT_MULTP,dtime_3[i]*PRINT_MULTP);
+        printf("\t2 | f1 = %2.5f | f2 = %2.5f | f3 = %2.5f\n",timespec_to_double_ms(dtime_spec_1[i]),timespec_to_double_ms(dtime_spec_2[i]),timespec_to_double_ms(dtime_spec_3[i]));
+    }
+
+    // printf("Max times (%i samples): \n\tf1 = %2.5f | f2 = %2.5f | f3 = %2.5f\n",N_SAMPLES,(float) 1000*t1/1000000000.0,(float) 1000*t2/1000000000.0,(float) 1000*t3/1000000000.0);
 
     // printf("Sec: %f\n",calc_func_ripple(f1));
 
@@ -192,14 +238,10 @@ int main(){
     printf("Ending main thread\n");
 
 
+
     // Libertando a memoria alocada pelo thread
     free(ret);
 
 
     return 0;
 }
-
-
-// Verificar se o thread criado esta mantendo as configuracoes
-
-// Verificar heranca

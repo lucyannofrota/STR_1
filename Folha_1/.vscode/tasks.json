@@ -22,15 +22,17 @@
             "args": [
                 "make",
                 "--directory=${workspaceFolder}",
-                // "&&clear",
                 "&&sudo ",
                 "&&${workspaceFolder}/./${fileBasenameNoExtension}"
             ],
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "presentation": {
                 "reveal": "always"
             },
             "problemMatcher": "$msCompile"
-        },
+        }
     ]
 }
