@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "print_functions.h": "c",
+        "stdio.h": "c",
+        "print_aux.h": "c"
+    }
+}
