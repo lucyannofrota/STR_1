@@ -140,11 +140,13 @@ int main(){
     // Aguardando o termino do thread
     pthread_join(thr1,NULL);
 
-    printf("\n\n###########\n");
-    printf("##Results##\n");
-    printf("###########\n\n\n");
+    printf("###### 1 ######\n");
 
-    print_table((struct timespec*)time_table,N_FUNCTIONS,N_SAMPLES,"");
+    printf("\n\t###########\n");
+    printf("\t##Results##\n");
+    printf("\t###########\n\n\n");
+
+    print_table((struct timespec*)time_table,N_FUNCTIONS,N_SAMPLES,"\t");
 
     printf("Ending main thread\n");
 

@@ -52,6 +52,16 @@ void thread_configs(pthread_attr_t *attr){
 
 }
 
+void change_thread_priority(pthread_attr_t *attr,int priority_mod){
+    struct sched_param param;
+
+    // printf("Max: %i\n",sched_get_priority_max(SCHED_FIFO)+priority_mod);
+
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO)+priority_mod;
+
+    pthread_attr_setschedparam(attr, &param);
+}
+
 // void display_pthread_affinity(pthread_t thread, char *prefix){
 
 //     int s;

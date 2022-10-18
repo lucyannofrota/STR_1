@@ -16,6 +16,8 @@
 
 void thread_configs(pthread_attr_t *attr);
 
+void change_thread_priority(pthread_attr_t *attr,int priority_mod);
+
 void set_thread_configs(pthread_t thread, cpu_set_t *cpu_set,pthread_attr_t *attr);
 
 //  void display_pthread_affinity(pthread_t thread, char *prefix);

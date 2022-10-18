@@ -17,7 +17,7 @@ void print_table(struct timespec *tab,int M, int N, char *prefix){
     }
 
     // Print time table
-    printf("%sTime table (%i samples):\n",prefix,N);
+    printf("%sTime table (%i samples) [ms]:\n",prefix,N);
     for(i = 0; i < N; i++){
         printf("%s\t",prefix);
         for(j = 0; j < M; j++){
@@ -26,15 +26,15 @@ void print_table(struct timespec *tab,int M, int N, char *prefix){
             if(max_values[j] < timespec_to_double_ms(*( tab + (j*N + i) ))){
                 max_values[j] = timespec_to_double_ms(*( tab + (j*N + i) ));
             }
-            printf("| f%i = %3.5f ",j+1,timespec_to_double_ms(*( tab + (j*N + i) )));
+            printf("| f%i = %8.2f ",j+1,timespec_to_double_ms(*( tab + (j*N + i) )));
         }
         printf("|\n");
     }
     // Print max values
-    printf("%sMax Times (%i samples):\n",prefix,N);
+    printf("%sMax Times (%i samples) [ms]:\n",prefix,N);
     printf("%s\t",prefix);
     for(j = 0; j < M; j++){
-        printf("| f%i = %3.5f ",j+1,max_values[j]);
+        printf("| f%i = %8.2f ",j+1,max_values[j]);
     }
     printf("|\n\n\n");
 }
