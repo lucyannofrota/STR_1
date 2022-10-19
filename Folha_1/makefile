@@ -1,6 +1,8 @@
-all: aux_objs problems complete
+all: aux_objs problems #complete
 
-LIBS = -lpthread -lrt -lm
+FLAGS = -lpthread -lrt -lm
+
+DBGCFLAGS = -g3 -O0 -DDEBUG
 
 AUX_OBJS_NAMES = pthread_aux print_aux
 
@@ -8,22 +10,21 @@ PROBLEMS_NAMES = problema_1 problema_3 example
 
 define generate_object
 	echo "\nGenerating $(2).o"
-	gcc -Wall -g3 -c $(1)$(2).c -o $(2).o
-	echo gcc -Wall -g3 -c aux_libs/$(2).c -o $(2).o
+	gcc -Wall $(DBGCFLAGS) -c $(1)$(2).c -o $(2).o
+	echo gcc -Wall $(DBGCFLAGS) -c $(1)$(2).c -o $(2).o
 	echo "$(2).o successfully generated\n"
 endef
 
 define generate_exec
 	echo "\nGenerating exec $(1)"
-	# gcc -Wall -g3 -c $(1).c -o $(1).o
 	$(call generate_object,,$(1))
-	gcc -Wall -g3 $(1).c func/func.o $(addsuffix .o,$(AUX_OBJS_NAMES)) -o $(1) ${LIBS}
-	echo "gcc -Wall -g3 $(1).c func/func.o $(addsuffix .o,$(AUX_OBJS_NAMES)) -o $(1) ${LIBS}"
+	gcc -Wall $(DBGCFLAGS) $(1).c func/func.o $(addsuffix .o,$(AUX_OBJS_NAMES)) -o $(1) ${FLAGS}
+	echo "gcc -Wall $(DBGCFLAGS) $(1).c func/func.o $(addsuffix .o,$(AUX_OBJS_NAMES)) -o $(1) ${FLAGS}"
 	echo "exec $(1) successfully generated\n"
 endef
 
-# gcc -Wall -g3 -c aux_libs/$(1).c -o $(1).o
-# echo gcc -Wall -g3 -c aux_libs/$(1).c -o $(1).o
+# gcc -Wall $(DBGCFLAGS) -c aux_libs/$(1).c -o $(1).o
+# echo gcc -Wall $(DBGCFLAGS) -c aux_libs/$(1).c -o $(1).o
 
 
 aux_objs:
@@ -36,8 +37,8 @@ problems:
 		$(call generate_exec,$(p)))
 # $(call generate_exec,problema_1)
 # 	gcc -Wall -g3 -c problema_1.c -o problema_1.o
-# #	gcc -Wall -O2 -g3 problema_1.c func/func.o ${AUX_OBJS} -o problema_1 ${LIBS}
-# 	gcc -Wall -g3 problema_1.c func/func.o $(addsuffix .o,$(AUX_OBJS_NAMES)) -o problema_1 ${LIBS}
+# #	gcc -Wall -O2 -g3 problema_1.c func/func.o ${AUX_OBJS} -o problema_1 ${FLAGS}
+# 	gcc -Wall -g3 problema_1.c func/func.o $(addsuffix .o,$(AUX_OBJS_NAMES)) -o problema_1 ${FLAGS}
 
 
 
@@ -67,7 +68,7 @@ problems:
 
 
 # aux_libs: ${AUX_OBJS}
-# 	# @echo "libs"
+# 	# @echo "FLAGS"
 # 	# $(call generate_object,${AUX_OBJS})
 
 # # pthread_aux.o print_aux.o
@@ -86,8 +87,8 @@ problems:
 # # problema_1
 
 # problema_1: problema_1.o
-# #	gcc -Wall -O2 -g3 problema_1.c func/func.o ${AUX_OBJS} -o problema_1 ${LIBS}
-# 	gcc -Wall -g3 problema_1.c func/func.o ${AUX_OBJS} -o problema_1 ${LIBS}
+# #	gcc -Wall -O2 -g3 problema_1.c func/func.o ${AUX_OBJS} -o problema_1 ${FLAGS}
+# 	gcc -Wall -g3 problema_1.c func/func.o ${AUX_OBJS} -o problema_1 ${FLAGS}
 
 # problema_1.o: problema_1.c
 # 	gcc -Wall -g3 -c problema_1.c -o problema_1.o

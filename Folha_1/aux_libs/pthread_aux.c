@@ -12,7 +12,7 @@
 
 
 
-void thread_configs(pthread_attr_t *attr){
+void thread_configs(pthread_attr_t *attr,int priority_mod){
     // https://man7.org/linux/man-pages/man7/sched.7.html
 
     pthread_attr_init(attr);
@@ -40,7 +40,7 @@ void thread_configs(pthread_attr_t *attr){
 
     struct sched_param param;
 
-    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO) + priority_mod;
     // if(opt == 0) param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     // else param.sched_priority = sched_get_priority_min(SCHED_FIFO);
 

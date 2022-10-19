@@ -14,7 +14,7 @@
 
 // void set_pthread_sched_attr(pthread_t thread, pthread_attr_t * attr);
 
-void thread_configs(pthread_attr_t *attr);
+void thread_configs(pthread_attr_t *attr,int priority_mod);
 
 void change_thread_priority(pthread_attr_t *attr,int priority_mod);
 

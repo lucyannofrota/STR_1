@@ -126,7 +126,7 @@ int main(){
 
     pthread_attr_t attr;
     
-    thread_configs(&attr);
+    thread_configs(&attr,0);
 
     pthread_t thr1;
 

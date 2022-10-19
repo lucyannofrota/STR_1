@@ -47,14 +47,14 @@ struct thread_arg{
     pthread_barrier_t *barrier;
 };
 
-void clk_wait(double m_sec){
+void clk_wait(double ms_sec){
     // https://stackoverflow.com/questions/20332382/linux-sleeping-with-clock-nanosleep
-
+    if(ms_sec <= 0) return;
     struct timespec deadline;
     clock_gettime(CLOCK_REALTIME, &deadline);
 
     // Add the time you want to sleep
-    deadline.tv_nsec += (long) ceil(m_sec*1000000000/1000.0);
+    deadline.tv_nsec += (long) ceil(ms_sec*1000000000/1000.0);
 
     // Normalize the time to account for the second boundary
     if(deadline.tv_nsec >= 1000000000) {
@@ -64,16 +64,43 @@ void clk_wait(double m_sec){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
 }
 
-struct timespec sub_timespec(struct timespec tim_1,struct timespec tim_2){
-    struct timespec result;
-    result.tv_sec = tim_1.tv_sec - tim_2.tv_sec;
-    result.tv_nsec = tim_1.tv_nsec - tim_2.tv_nsec;
-    if(result.tv_nsec < 0){
-        result.tv_sec -= 1;
-        result.tv_nsec += 1000000000;
+void sub_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
+    // a must be greater then b
+    // from <sys/time.h>
+    // # define timersub(a, b, result)	
+    result->tv_sec = tim_1->tv_sec - tim_2->tv_sec;
+    result->tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
+    if(result->tv_nsec < 0){
+        result->tv_sec --;
+        result->tv_nsec += 1000000000;
     }
-    return result;
+    // return result;
 }
+
+double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
+    // from <sys/time.h>
+    // # define timersub(a, b, result)
+    struct timespec result;
+    result.tv_sec = tim_1->tv_sec - tim_2->tv_sec;
+    result.tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
+    if(result.tv_nsec < 0){
+        result.tv_sec --;
+        result.tv_nsec += 1000000;
+    }
+    return (result.tv_sec*1e9 + ((long int)result.tv_nsec))/1000000.0;
+}
+
+// void sub_timespec_ptr(struct timespec *a,struct timespec *b, struct timespec *result){
+//     // a must be greater then b
+//     // from <sys/time.h>
+//     // # define timersub(a, b, result)	
+//     (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;
+//     (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;
+//     if ((result)->tv_usec < 0) {
+//         (result)->tv_sec--;
+//         (result)->tv_usec += 1000000000;
+//     }
+// }
 
 struct timespec diff_timespec(const struct timespec *time1,
     const struct timespec *time0) {
@@ -119,6 +146,7 @@ void *thread_start(void *arg){
 
     printf("Th%i Wainting other threads\n",thr_arg->num);
     pthread_barrier_wait(thr_arg->barrier);
+    clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[0]));
     printf("Th%i Running...\n",thr_arg->num);
 
     int s, num;
@@ -129,14 +157,24 @@ void *thread_start(void *arg){
     // setup_periodic_timer(thr_arg->ms_period,&alarm_sig);
 
     int i;
+    struct timespec result;
     for(i = 0; i < N_SAMPLES; i++){
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i]));
+        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i+1]));
         thr_arg->func(CLASS,GROUP);
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i]));
+        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i+1]));
 
+        // print_timespec(thr_arg->time_table[1+2*i],"\t");
+        // print_timespec(thr_arg->time_table[2*i],"\t");
+        // printf(
+        //     "Dif: %6.2f | t = %i ms| sub: %6.2f\n",
+        //     dtime_ms((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i])),
+        //     thr_arg->ms_period,
+        //     thr_arg->ms_period-dtime_ms((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i]))
+        // );
 
-        // printf("Dif: %6.2f | t = %i ms| sub: %6.2f\n",timespec_to_double_ms(sub_timespec(thr_arg->time_table[1+2*i],thr_arg->time_table[2*i])),thr_arg->ms_period,thr_arg->ms_period-timespec_to_double_ms(sub_timespec(thr_arg->time_table[1+2*i],thr_arg->time_table[2*i])));
-        clk_wait(thr_arg->ms_period-timespec_to_double_ms(sub_timespec(thr_arg->time_table[1+2*i],thr_arg->time_table[2*i])));
+        sub_timespec((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i]),&result);
+        // printf()dtime_ms((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i]))
+        clk_wait(thr_arg->ms_period-timespec_to_double_ms(&result));
         // s = sigwait(&alarm_sig,&num);
         // if (s != 0) handle_error_en(s, "sigwait");
     }
@@ -192,13 +230,14 @@ int main(){
     s = pthread_setaffinity_np(main_thread,sizeof(cpu_set), &cpu_set);
     if (s != 0) handle_error_en(s, "pthread_attr_destroy");
 
-    pthread_attr_t attr;
+    pthread_attr_t attr1,attr2,attr3;
     
-    thread_configs(&attr);
+    thread_configs(&attr1,0); thread_configs(&attr2,-5); thread_configs(&attr3,-10);
 
     printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    struct timespec time_table[N_FUNCTIONS][N_SAMPLES*2];
+    struct timespec time_table[N_FUNCTIONS][N_SAMPLES*2+1];
+    double time_table_dbl[N_FUNCTIONS][N_SAMPLES*2+1];
 
     pthread_t thr[3];
 
@@ -219,17 +258,21 @@ int main(){
 
 
 
-    pthread_create(&thr[0],&attr,thread_start, &thr_arg[0]);
-    change_thread_priority(&attr,-1);
-    pthread_create(&thr[1],&attr,thread_start, &thr_arg[1]);
-    change_thread_priority(&attr,-2);
-    pthread_create(&thr[2],&attr,thread_start, &thr_arg[2]);
+    pthread_create(&thr[0],&attr1,thread_start, &thr_arg[0]);
+    // change_thread_priority(&attr,-1);
+    pthread_create(&thr[1],&attr2,thread_start, &thr_arg[1]);
+    // change_thread_priority(&attr,-2);
+    pthread_create(&thr[2],&attr3,thread_start, &thr_arg[2]);
 
     pthread_join(thr[0],NULL);
     pthread_join(thr[1],NULL);
     pthread_join(thr[2],NULL);
 
-    s = pthread_attr_destroy(&attr);
+    s = pthread_attr_destroy(&attr1);
+    if (s != 0) handle_error_en(s, "pthread_attr_destroy");
+    s = pthread_attr_destroy(&attr2);
+    if (s != 0) handle_error_en(s, "pthread_attr_destroy");
+    s = pthread_attr_destroy(&attr3);
     if (s != 0) handle_error_en(s, "pthread_attr_destroy");
     s = pthread_barrier_destroy(&barrier);
     if (s != 0) handle_error_en(s, "pthread_barrierattr_destroy");
@@ -243,16 +286,30 @@ int main(){
     printf("\t##Results##\n");
     printf("\t###########\n\n\n");
 
+    struct timespec result;
 
     for(int i = 0; i < N_FUNCTIONS; i++){
         for(int j = 0; j < N_SAMPLES*2; j++){
-            time_table[i][j] = sub_timespec(time_table[i][j],time_table[0][0]);
+
+            // sub_timespec(&(time_table[i][j]),&(time_table[0][0]),&result);
+            time_table_dbl[i][j] = dtime_ms(&(time_table[i][j]),&(time_table[0][0]));
+            // time_table[i][j] = result;
         }
     }
 
-    print_table((struct timespec*)time_table,N_FUNCTIONS,N_SAMPLES*2,"\t");
+    // print_table((struct timespec*)time_table,N_FUNCTIONS,N_SAMPLES*2,"\t");
+    print_table(time_table_dbl,N_FUNCTIONS,N_SAMPLES*2,"\t");
 
     printf("Ending main thread\n");
+
+    struct timespec a={1,9},b={0,15};
+
+    sub_timespec(&a,&b,&result);
+    print_timespec(result,"");
+    printf("val: %f\n",timespec_to_double_ms(&result));
+    sub_timespec(&b,&a,&result);
+    print_timespec(result,"");
+    printf("val: %f\n",timespec_to_double_ms(&result));
 
 
 

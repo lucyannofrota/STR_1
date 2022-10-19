@@ -4,9 +4,8 @@
         {
             "label": "msvc build [Makefile]",
             "type": "shell",
-            "command": "",
+            "command": "make",
             "args": [
-                "make",
                 "--directory=${workspaceFolder}"
             ],
             "group": "build",
