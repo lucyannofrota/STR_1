@@ -39,7 +39,7 @@ void print_table(struct timespec *tab,int M, int N, char *prefix){
     printf("|\n\n\n");
 }
 
-void print_table_double(double **tab,int M, int N, char *prefix){
+void print_table_double(int M, int N, double tab[][N], char *prefix){
     double max_values[M];
 
     // printf("Val: %3.5f\n",timespec_to_double_ms(*( tab + (0*N + 0)*sizeof(struct timespec) )));
@@ -56,12 +56,8 @@ void print_table_double(double **tab,int M, int N, char *prefix){
     for(i = 0; i < N; i++){
         printf("%s\t",prefix);
         for(j = 0; j < M; j++){
-            // *((arr+i*n) + j))
-            // printf("Val: %3.5f\n",timespec_to_double_ms( *( tab + (j*N + i)*sizeof(struct timespec) ) ));
-            // if(max_values[j] < timespec_to_double_ms(( tab + (j*N + i) ))){
-            //     max_values[j] = timespec_to_double_ms(( tab + (j*N + i) ));
-            // }
-            printf("| f%i = %9.3f ",j+1,tab[j][i]);
+            if(i == 0) printf("| f%i = %9.3f ",j+1,tab[j][i]);
+            else printf("| f%i%s= %9.3f ",j+1,i % 2 == 0 ? "+" : "-",tab[j][i]);
         }
         printf("|\n");
     }

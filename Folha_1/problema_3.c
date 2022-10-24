@@ -37,10 +37,8 @@
 //     long     tv_nsec;       /* nanoseconds */
 // };
 
-// sec e nsec devem ser utilizados em conjunto
-
 struct thread_arg{
-    int num;
+    int thread_number;
     u_int16_t ms_period;
     void (*func)(int,int);
     struct timespec *time_table;
@@ -64,17 +62,15 @@ void clk_wait(double ms_sec){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
 }
 
-void sub_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
-    // a must be greater then b
+void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
     // from <sys/time.h>
-    // # define timersub(a, b, result)	
-    result->tv_sec = tim_1->tv_sec - tim_2->tv_sec;
-    result->tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
-    if(result->tv_nsec < 0){
-        result->tv_sec --;
-        result->tv_nsec += 1000000000;
+    // define timeradd(a, b, result)
+    result->tv_sec = tim_1->tv_sec + tim_2->tv_sec;
+    result->tv_nsec = tim_1->tv_nsec + tim_2->tv_nsec;
+    if(result->tv_nsec >= 1e9){
+        result->tv_sec++;
+        result->tv_nsec -= 1e9;
     }
-    // return result;
 }
 
 double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
@@ -83,136 +79,48 @@ double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
     struct timespec result;
     result.tv_sec = tim_1->tv_sec - tim_2->tv_sec;
     result.tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
-    if(result.tv_nsec < 0){
+    if(result.tv_nsec < 0 && result.tv_sec > 0){
         result.tv_sec --;
-        result.tv_nsec += 1000000;
+        result.tv_nsec += 1e9;
     }
     return (result.tv_sec*1e9 + ((long int)result.tv_nsec))/1000000.0;
 }
 
-// void sub_timespec_ptr(struct timespec *a,struct timespec *b, struct timespec *result){
-//     // a must be greater then b
-//     // from <sys/time.h>
-//     // # define timersub(a, b, result)	
-//     (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;
-//     (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;
-//     if ((result)->tv_usec < 0) {
-//         (result)->tv_sec--;
-//         (result)->tv_usec += 1000000000;
-//     }
-// }
-
-struct timespec diff_timespec(const struct timespec *time1,
-    const struct timespec *time0) {
-  assert(time1 && time1->tv_nsec < 1000000000);
-  assert(time0 && time0->tv_nsec < 1000000000);
-  struct timespec diff = {.tv_sec = time1->tv_sec - time0->tv_sec, .tv_nsec =
-      time1->tv_nsec - time0->tv_nsec};
-  if (diff.tv_nsec < 0) {
-    diff.tv_nsec += 1000000000;
-    diff.tv_sec--;
-  }
-  return diff;
-}
-
-
-int setup_periodic_timer(unsigned int ms_period, sigset_t *alarm_sig){
-    // https://github.com/csimmonds/periodic-threads/blob/master/itimer.c
-	int ret;
-	struct itimerval tim;
-
-	/* Block SIGALRM in this thread */
-	sigemptyset(alarm_sig);
-	sigaddset(alarm_sig, SIGALRM);
-	pthread_sigmask(SIG_BLOCK, alarm_sig, NULL);
-
-	tim.it_value.tv_sec = ms_period / 1000;
-	tim.it_value.tv_usec = (ms_period % 1000) * 1000;
-    // printf("tim %i, %i\n",tim.it_value.tv_sec,tim.it_value.tv_usec);
-	tim.it_interval.tv_sec = ms_period / 1000;
-	tim.it_interval.tv_usec = (ms_period % 1000) * 1000;
-	ret = setitimer(ITIMER_REAL, &tim, NULL);
-	if (ret != 0)
-		perror("Failed to set timer");
-	return ret;
-}
-
 void *thread_start(void *arg){
-
     struct thread_arg *thr_arg = arg;
 
+    printf("thread %i attr:\n",thr_arg->thread_number); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    printf("Th%i Wainting other threads\n",thr_arg->thread_number);
 
-    printf("Th%i Wainting other threads\n",thr_arg->num);
     pthread_barrier_wait(thr_arg->barrier);
     clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[0]));
-    printf("Th%i Running...\n",thr_arg->num);
-
-    int s, num;
-
-    sigset_t alarm_sig;
-
-    
-    // setup_periodic_timer(thr_arg->ms_period,&alarm_sig);
-
+    struct timespec period = {0,thr_arg->ms_period*1e6};
+    printf("Th%i Running...\n",thr_arg->thread_number);
     int i;
-    struct timespec result;
     for(i = 0; i < N_SAMPLES; i++){
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i+1]));
-        thr_arg->func(CLASS,GROUP);
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i+1]));
-
-        // print_timespec(thr_arg->time_table[1+2*i],"\t");
-        // print_timespec(thr_arg->time_table[2*i],"\t");
-        // printf(
-        //     "Dif: %6.2f | t = %i ms| sub: %6.2f\n",
-        //     dtime_ms((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i])),
-        //     thr_arg->ms_period,
-        //     thr_arg->ms_period-dtime_ms((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i]))
-        // );
-
-        sub_timespec((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i]),&result);
-        // printf()dtime_ms((&thr_arg->time_table[1+2*i]),&(thr_arg->time_table[2*i]))
-        clk_wait(thr_arg->ms_period-timespec_to_double_ms(&result));
-        // s = sigwait(&alarm_sig,&num);
-        // if (s != 0) handle_error_en(s, "sigwait");
+        if(i==0) add_timespec(&(thr_arg->time_table[0]),&period,&(thr_arg->time_table[1+i*2]));
+        else add_timespec(&(thr_arg->time_table[1+(i-1)*2]),&period,&(thr_arg->time_table[1+i*2]));
     }
 
-    // for(i = N_SAMPLES*2-1; i >= 0; i--){
-    //     thr_arg->time_table[i] = sub_timespec(thr_arg->time_table[i],thr_arg->time_table[0]);
-    // }
+    for(i = 0; i < N_SAMPLES; i++){
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->time_table[1+i*2]), NULL); // 1,3,5,7,9,11
+        thr_arg->func(CLASS,GROUP);
+        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2+2*i])); // 2,4,6,8,10,12
+    }
 
-    // for(i = N_SAMPLES-1; i >= 0; i--){
-    //     thr_arg->time_table[]
-    //     // double aux = sub_timespec(thr_arg->time_table[1+2*i],thr_arg->time_table[2*i]);
-    //     thr_arg->time_table[2*i] = sub_timespec(thr_arg->time_table[1+2*i],thr_arg->time_table[2*i]);
-    //     thr_arg->time_table[2*i+1] = sub_timespec(thr_arg->time_table[2*i+2],thr_arg->time_table[2*i+1]);
-    // }
-
-    printf("Th%i done\n",thr_arg->num);
+    printf("Th%i done\n",thr_arg->thread_number);
 
     return NULL;
 }
 
 int main(){
 
-    // signal(SIGTSTP, catch_SIGTSTP);
-
-    // Verificando atributos iniciais do thread main
-    sigset_t alarm_sig;
-    sigemptyset(&alarm_sig);
-	sigaddset(&alarm_sig, SIGALRM);
-	sigprocmask(SIG_BLOCK, &alarm_sig, NULL);
-
     printf("Process PID: %i\n",getpid());
 
     int s;
-
-    pthread_t main_thread = pthread_self();
-
     cpu_set_t cpu_set;
-
+    pthread_t main_thread = pthread_self();
 
     // Alterando atributos do thread main
 
@@ -237,6 +145,7 @@ int main(){
     printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
     struct timespec time_table[N_FUNCTIONS][N_SAMPLES*2+1];
+    
     double time_table_dbl[N_FUNCTIONS][N_SAMPLES*2+1];
 
     pthread_t thr[3];
@@ -248,20 +157,15 @@ int main(){
 
 
     struct thread_arg thr_arg[3] = {
-        {1,100,f2,time_table[1],&barrier},
-        {2,200,f3,time_table[2],&barrier},
-        {3,300,f1,time_table[0],&barrier}
+        {1,100,f1,time_table[0],&barrier},
+        {2,200,f2,time_table[1],&barrier},
+        {3,300,f3,time_table[2],&barrier}
     };
 
     // https://docs.oracle.com/cd/E19455-01/806-5257/6je9h032r/index.html
 
-
-
-
     pthread_create(&thr[0],&attr1,thread_start, &thr_arg[0]);
-    // change_thread_priority(&attr,-1);
     pthread_create(&thr[1],&attr2,thread_start, &thr_arg[1]);
-    // change_thread_priority(&attr,-2);
     pthread_create(&thr[2],&attr3,thread_start, &thr_arg[2]);
 
     pthread_join(thr[0],NULL);
@@ -286,35 +190,15 @@ int main(){
     printf("\t##Results##\n");
     printf("\t###########\n\n\n");
 
-    struct timespec result;
-
     for(int i = 0; i < N_FUNCTIONS; i++){
-        for(int j = 0; j < N_SAMPLES*2; j++){
-
-            // sub_timespec(&(time_table[i][j]),&(time_table[0][0]),&result);
+        for(int j = 0; j < N_SAMPLES*2+1; j++){
             time_table_dbl[i][j] = dtime_ms(&(time_table[i][j]),&(time_table[0][0]));
-            // time_table[i][j] = result;
         }
     }
 
-    // print_table((struct timespec*)time_table,N_FUNCTIONS,N_SAMPLES*2,"\t");
-    print_table(time_table_dbl,N_FUNCTIONS,N_SAMPLES*2,"\t");
+    print_table_double(N_FUNCTIONS,N_SAMPLES*2+1,time_table_dbl,"\t");
 
     printf("Ending main thread\n");
-
-    struct timespec a={1,9},b={0,15};
-
-    sub_timespec(&a,&b,&result);
-    print_timespec(result,"");
-    printf("val: %f\n",timespec_to_double_ms(&result));
-    sub_timespec(&b,&a,&result);
-    print_timespec(result,"");
-    printf("val: %f\n",timespec_to_double_ms(&result));
-
-
-
-    // Libertando a memoria alocada pelo thread
-
 
     return 0;
 }

@@ -1,0 +1,83 @@
+Process PID: 12090
+##################
+##Thread configs##
+##################
+
+
+main_thread attr Initial:
+	Thread affinity = 12
+	Inherit scheduler   = PTHREAD_INHERIT_SCHED
+	Scheduling policy   = SCHED_OTHER
+	Scheduling priority = 0
+
+main_thread attr Changed:
+	Thread affinity = 1
+	Inherit scheduler   = PTHREAD_INHERIT_SCHED
+	Scheduling policy   = SCHED_OTHER
+	Scheduling priority = 0
+
+Mem[0]: 0x7ffd1482dfe0
+Mem[0]: 0x7ffd1482dfe0
+thread 1 attr:
+	Thread affinity = 1
+	Inherit scheduler   = PTHREAD_EXPLICIT_SCHED
+	Scheduling policy   = SCHED_FIFO
+	Scheduling priority = 99
+
+Th1 Wainting other threads
+Th1 Running...
+Th1 done
+
+###### 3 ######
+
+	###########
+	##Results##
+	###########
+
+
+	 sec: 1666369632
+	nsec: 926151766
+		 sec: 1666369632
+		nsec: 926151766
+		 sec: 1666369632
+		nsec: 926152088
+		 sec: 1666369632
+		nsec: 960440758
+		 sec: 1666369633
+		nsec: 60464141
+		 sec: 1666369633
+		nsec: 94851186
+		 sec: 1666369633
+		nsec: 194949759
+		 sec: 1666369633
+		nsec: 229954982
+		 sec: 1666369633
+		nsec: 330058721
+		 sec: 1666369633
+		nsec: 365291227
+		 sec: 1666369633
+		nsec: 465398575
+		 sec: 1666369633
+		nsec: 500624584
+		 sec: 1666369633
+		nsec: 600693566
+		 sec: 1666369633
+		nsec: 636347039
+	Time table (12 samples) [ms]:
+		| f1 = 4554575475235.936 | f2 = -1918361407780.757 | f3 = 1666369633094.851 |
+		| f1 = 6908743925387.729 | f2 = -1918361407780.757 | f3 = 1666369633194.950 |
+		| f1 = -280123932007.402 | f2 = -1918361407780.757 | f3 = 1666369633229.955 |
+		| f1 = 6017159309381.064 | f2 = -1918361407780.757 | f3 = 1666369633330.059 |
+		| f1 = 502531761106.912 | f2 = -1918361407780.757 | f3 = 1666369633365.291 |
+		| f1 = -7138323789303.491 | f2 = -1918361407780.757 | f3 = 1666369633465.398 |
+		| f1 = -6818027941173.608 | f2 = -1918361407780.757 | f3 = 1666369633500.625 |
+		| f1 = -1918361407780.757 | f2 = 2515362374798.279 | f3 = 1666369633600.693 |
+		| f1 = -1918361407780.757 | f2 = 1666369632926.152 | f3 = 1666369633636.347 |
+		| f1 = -1918361407780.757 | f2 = 1666369632926.152 | f3 =  2000.000 |
+		| f1 = -1918361407780.757 | f2 = 1666369632960.441 | f3 =  2000.000 |
+		| f1 = -1918361407780.757 | f2 = 1666369633060.464 | f3 =  2000.000 |
+	Max Times (12 samples) [ms]:
+		| f1 = 6908743925387.729 | f2 = 2515362374798.279 | f3 = 1666369633636.347 |
+
+
+Ending main thread
