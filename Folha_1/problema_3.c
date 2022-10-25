@@ -1,7 +1,9 @@
 #define N_FUNCTIONS 3
-#define N_SAMPLES 6
+#define N_SAMPLES 4
 
 #define PRINT_MULTP 1000/1000000000.0
+
+#define I_TIME_S 3
 
 #define _GNU_SOURCE
 
@@ -41,6 +43,8 @@ struct thread_arg{
     int thread_number;
     u_int16_t ms_period;
     void (*func)(int,int);
+    struct timespec *time_ref;
+    struct timespec *sched_times;
     struct timespec *time_table;
     pthread_barrier_t *barrier;
 };
@@ -93,20 +97,18 @@ void *thread_start(void *arg){
 
     printf("Th%i Wainting other threads\n",thr_arg->thread_number);
 
-    pthread_barrier_wait(thr_arg->barrier);
-    clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[0]));
-    struct timespec period = {0,thr_arg->ms_period*1e6};
-    printf("Th%i Running...\n",thr_arg->thread_number);
     int i;
-    for(i = 0; i < N_SAMPLES; i++){
-        if(i==0) add_timespec(&(thr_arg->time_table[0]),&period,&(thr_arg->time_table[1+i*2]));
-        else add_timespec(&(thr_arg->time_table[1+(i-1)*2]),&period,&(thr_arg->time_table[1+i*2]));
-    }
+    const struct timespec period = {0,thr_arg->ms_period*1e6}, i_period = {I_TIME_S,0*1e6};
+    add_timespec(thr_arg->time_ref,&i_period,&(thr_arg->sched_times[0]));
+    for(i = 0; i < N_SAMPLES; i++) add_timespec(&(thr_arg->sched_times[i]),&period,&(thr_arg->sched_times[i+1]));
+    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[0]), NULL);
+    printf("Th%i Running...\n",thr_arg->thread_number);
 
     for(i = 0; i < N_SAMPLES; i++){
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->time_table[1+i*2]), NULL); // 1,3,5,7,9,11
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[i+1]), NULL);
+        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i])); // 0,2,4,6,8,10
         thr_arg->func(CLASS,GROUP);
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2+2*i])); // 2,4,6,8,10,12
+        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i])); // 1,3,5,7,9,11
     }
 
     printf("Th%i done\n",thr_arg->thread_number);
@@ -140,13 +142,15 @@ int main(){
 
     pthread_attr_t attr1,attr2,attr3;
     
-    thread_configs(&attr1,0); thread_configs(&attr2,-5); thread_configs(&attr3,-10);
+    thread_configs(&attr1,0); thread_configs(&attr2,-1); thread_configs(&attr3,-2);
 
     printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    struct timespec time_table[N_FUNCTIONS][N_SAMPLES*2+1];
+    struct timespec time_table[N_FUNCTIONS][N_SAMPLES*2];
+    struct timespec sched_table[N_FUNCTIONS][N_SAMPLES+1];
     
-    double time_table_dbl[N_FUNCTIONS][N_SAMPLES*2+1];
+    double time_table_dbl[N_FUNCTIONS][N_SAMPLES*2];
+    double sched_table_dbl[N_FUNCTIONS][N_SAMPLES+1];
 
     pthread_t thr[3];
 
@@ -155,11 +159,14 @@ int main(){
     s = pthread_barrier_init(&barrier,NULL,3);
     if (s != 0) handle_error_en(s, "pthread_barrier_init");
 
+    struct timespec time_ref;
+
+    clock_gettime(CLOCK_REALTIME, &time_ref);
 
     struct thread_arg thr_arg[3] = {
-        {1,100,f1,time_table[0],&barrier},
-        {2,200,f2,time_table[1],&barrier},
-        {3,300,f3,time_table[2],&barrier}
+        {1,100,f1,&time_ref,sched_table[0],time_table[0],&barrier},
+        {2,200,f2,&time_ref,sched_table[1],time_table[1],&barrier},
+        {3,300,f3,&time_ref,sched_table[2],time_table[2],&barrier}
     };
 
     // https://docs.oracle.com/cd/E19455-01/806-5257/6je9h032r/index.html
@@ -190,13 +197,17 @@ int main(){
     printf("\t##Results##\n");
     printf("\t###########\n\n\n");
 
+
     for(int i = 0; i < N_FUNCTIONS; i++){
-        for(int j = 0; j < N_SAMPLES*2+1; j++){
-            time_table_dbl[i][j] = dtime_ms(&(time_table[i][j]),&(time_table[0][0]));
+        for(int j = 0; j < N_SAMPLES+1; j++){
+            sched_table_dbl[i][j] = dtime_ms(&(sched_table[i][j]),&(sched_table[0][0]));
+        }
+        for(int j = 0; j < N_SAMPLES*2; j++){
+            time_table_dbl[i][j] = dtime_ms(&(time_table[i][j]),&(sched_table[0][0]));
         }
     }
 
-    print_table_double(N_FUNCTIONS,N_SAMPLES*2+1,time_table_dbl,"\t");
+    report_times(N_FUNCTIONS,N_SAMPLES+1,sched_table_dbl,time_table_dbl,"\t\t");
 
     printf("Ending main thread\n");
 
