@@ -1,5 +1,5 @@
 #define N_FUNCTIONS 3
-#define N_SAMPLES 4
+#define N_SAMPLES 10
 
 #define PRINT_MULTP 1000/1000000000.0
 
@@ -49,22 +49,22 @@ struct thread_arg{
     pthread_barrier_t *barrier;
 };
 
-void clk_wait(double ms_sec){
-    // https://stackoverflow.com/questions/20332382/linux-sleeping-with-clock-nanosleep
-    if(ms_sec <= 0) return;
-    struct timespec deadline;
-    clock_gettime(CLOCK_REALTIME, &deadline);
+// void clk_wait(double ms_sec){
+//     // https://stackoverflow.com/questions/20332382/linux-sleeping-with-clock-nanosleep
+//     if(ms_sec <= 0) return;
+//     struct timespec deadline;
+//     clock_gettime(CLOCK_REALTIME, &deadline);
 
-    // Add the time you want to sleep
-    deadline.tv_nsec += (long) ceil(ms_sec*1000000000/1000.0);
+//     // Add the time you want to sleep
+//     deadline.tv_nsec += (long) ceil(ms_sec*1000000000/1000.0);
 
-    // Normalize the time to account for the second boundary
-    if(deadline.tv_nsec >= 1000000000) {
-        deadline.tv_nsec -= 1000000000;
-        deadline.tv_sec++;
-    }
-    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
-}
+//     // Normalize the time to account for the second boundary
+//     if(deadline.tv_nsec >= 1000000000) {
+//         deadline.tv_nsec -= 1000000000;
+//         deadline.tv_sec++;
+//     }
+//     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
+// }
 
 void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
     // from <sys/time.h>
@@ -102,7 +102,7 @@ void *thread_start(void *arg){
     add_timespec(thr_arg->time_ref,&i_period,&(thr_arg->sched_times[0]));
     for(i = 0; i < N_SAMPLES; i++) add_timespec(&(thr_arg->sched_times[i]),&period,&(thr_arg->sched_times[i+1]));
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[0]), NULL);
-    printf("Th%i Running...\n",thr_arg->thread_number);
+    printf("Th%i [Running...]\n",thr_arg->thread_number);
 
     for(i = 0; i < N_SAMPLES; i++){
         clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[i+1]), NULL);
@@ -111,7 +111,7 @@ void *thread_start(void *arg){
         clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i])); // 1,3,5,7,9,11
     }
 
-    printf("Th%i done\n",thr_arg->thread_number);
+    printf("Th%i [Done]\n",thr_arg->thread_number);
 
     return NULL;
 }

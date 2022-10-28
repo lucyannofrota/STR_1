@@ -81,9 +81,18 @@ void centerText(char *buff, char *text, int fieldWidth) {
 
 void report_times(int M, int N, double sched_tab[][N], double time_tab[][(N-1)*2], char *prefix){
 
-    const int width = 60;
-
     int i,j;
+
+    float Lims_RT[M*2], Lims_RTJ[M*2], RT = 0, RTJ = 0;
+    for(i = 0; i < M; i++){
+        Lims_RT[i*2] = 1e6; Lims_RT[i*2+1] = -1e6;
+        Lims_RTJ[i*2] = 1e6; Lims_RTJ[i*2+1] = -1e6;
+    }
+
+    // Table
+
+
+    const int width = 25*5;
 
     char sep[width+1];
 
@@ -91,7 +100,6 @@ void report_times(int M, int N, double sched_tab[][N], double time_tab[][(N-1)*2
         sep[i] = '-';
     } 
     sep[width-1] = '\0';
-
 
     // Print h separator
     printf("%s%s\n",prefix,sep);
@@ -103,20 +111,54 @@ void report_times(int M, int N, double sched_tab[][N], double time_tab[][(N-1)*2
     printf("%s|%s|\n",prefix,c_text);
     // Print h separator
     printf("%s%s\n",prefix,sep);
-    // Header
-    int l_size = ceil((width-2-3-2)/3.0), r_size = ceil((width-2-3-2)/3.0), c_size = width-2-3-2-l_size-r_size;
-    char l[l_size], r[r_size], c[c_size];
-    centerText(l,"Sched Time",l_size-1);
-    centerText(c,"Start Time(ST)",c_size);
-    centerText(r,"End Time(ET)",r_size);
-    printf("%s|fun|%s||%s||%s|\n",prefix,l,c,r);
-    l_size-=2; c_size-=1; r_size-=1;
+    // Header 1
+    const int base = width-2-3-2-2-1;
+    int l_size = ceil(base/5.0), l2_size = ceil(base/5.0), c_size = ceil(base/5.0), r2_size = ceil(base/5.0), r_size = base-l_size-l2_size-r2_size-c_size;
+    char l[l_size], l2[l2_size], c[c_size], r2[r2_size], r[r_size];
+    centerText(l,"Scheduled Time (ST)",l_size+1);
+    centerText(l2,"Activation Time (AT)",l2_size);
+    centerText(c,"Exit Time (ET)",c_size);
+    centerText(r2,"Response Time (RT)",r2_size-1);
+    centerText(r,"RT Jitter (RTJ)",r_size);
+    printf("%s|fcn|%s||%s||%s||%s||%s|\n",prefix,l,l2,c,r2,r);
+    // Header 2
+    centerText(l," ",l_size+1);
+    centerText(l2," ",l2_size);
+    centerText(c," ",c_size);
+    centerText(r2,"RT = AT - ST",r2_size-1);
+    centerText(r,"RTJ = ET - AT",r_size);
+    printf("%s|   |%s||%s||%s||%s||%s|\n",prefix,l,l2,c,r2,r);
+    // Core
+    l_size-= 0; l2_size-=1; c_size-=1; r2_size-=2; r_size-=1;
     for(i = 0; i < M; i++){
         // Print h separator
         printf("%s%s\n",prefix,sep);
         for(j = 0; j < N-1; j++){
-            printf("%s|#f%i|%*.3f||%*.3f||%*.3f|\n",prefix,i+1,l_size,sched_tab[i][j+1],c_size,time_tab[i][j*2],r_size,time_tab[i][j*2+1]);
+            RT = time_tab[i][j*2]-sched_tab[i][j+1];
+            if(RT < Lims_RT[2*i]) Lims_RT[2*i] = RT;
+            if(RT > Lims_RT[2*i+1]) Lims_RT[2*i+1] = RT;
+            RTJ = time_tab[i][j*2+1]-time_tab[i][j*2];
+            if(RTJ < Lims_RTJ[2*i]) Lims_RTJ[2*i] = RTJ;
+            if(RTJ > Lims_RTJ[2*i+1]) Lims_RTJ[2*i+1] = RTJ;
+            printf("%s|#f%i|%*.3f||%*.3f||%*.3f||%*.3f||%*.3f|\n",prefix,i+1,
+                l_size,sched_tab[i][j+1],
+                l2_size,time_tab[i][j*2],
+                c_size,time_tab[i][j*2+1],
+                r2_size,RT,
+                r_size,RTJ
+            );
         }
     }
-    printf("%s%s\n",prefix,sep);
+    // Footer
+    printf("%s%s\n\n\n",prefix,sep); 
+
+
+    printf("%s[Min,Max] (ms)\n\n",prefix);
+    // Max Values
+    for(i = 0; i < M; i++){
+        printf("%sf%i:\n",prefix,i+1);
+        printf("%s\tResponse Time (RT): [%9.5f,%9.5f]\n",prefix,Lims_RT[2*i],Lims_RT[2*i+1]);
+        printf("%s\tResponse Time Jitter (RTJ): [%9.5f,%9.5f]\n",prefix,Lims_RTJ[2*i],Lims_RTJ[2*i+1]);
+        printf("\n");
+    }
 }
