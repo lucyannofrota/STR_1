@@ -1,5 +1,6 @@
 #define N_FUNCTIONS 3
-#define N_SAMPLES 10
+#define N_SAMPLES 60 //60
+#define N_TIME 6000 // ms
 
 #define PRINT_MULTP 1000/1000000000.0
 
@@ -26,6 +27,8 @@
 
 #include <sched.h>
 #include <assert.h>
+
+#include "math.h"
 
 #include "aux_libs/print_aux.h"
 
@@ -104,11 +107,21 @@ void *thread_start(void *arg){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[0]), NULL);
     printf("Th%i [Running...]\n",thr_arg->thread_number);
 
+    // const int N_SAMPLES = floor(N_TIME/(thr_arg->ms_period/1000.0));
+
     for(i = 0; i < N_SAMPLES; i++){
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[i+1]), NULL);
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i])); // 0,2,4,6,8,10
-        thr_arg->func(CLASS,GROUP);
-        clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i])); // 1,3,5,7,9,11
+        if(N_TIME <= i*thr_arg->ms_period) {
+            printf("N_TIME: %i, TIME: %i\n",N_TIME,i*thr_arg->ms_period);
+            const struct timespec zer = {0,0};
+            thr_arg->time_table[2*i] = zer;
+            thr_arg->time_table[2*i+1] = zer;
+        }
+        else{
+            clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[i+1]), NULL);
+            clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i])); // 0,2,4,6,8,10
+            thr_arg->func(CLASS,GROUP);
+            clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i])); // 1,3,5,7,9,11
+        }
     }
 
     printf("Th%i [Done]\n",thr_arg->thread_number);
@@ -197,17 +210,24 @@ int main(){
     printf("\t##Results##\n");
     printf("\t###########\n\n\n");
 
+    int lens[N_FUNCTIONS] = {0,0,0};
 
     for(int i = 0; i < N_FUNCTIONS; i++){
         for(int j = 0; j < N_SAMPLES+1; j++){
-            sched_table_dbl[i][j] = dtime_ms(&(sched_table[i][j]),&(sched_table[0][0]));
+            if(sched_table[i][j].tv_sec == 0 && sched_table[i][j].tv_nsec == 0) sched_table_dbl[i][j] = 0;
+            else sched_table_dbl[i][j] = dtime_ms(&(sched_table[i][j]),&(sched_table[0][0]));
         }
-        for(int j = 0; j < N_SAMPLES*2; j++){
-            time_table_dbl[i][j] = dtime_ms(&(time_table[i][j]),&(sched_table[0][0]));
+        for(int j = 0; j < N_SAMPLES; j++){
+            if(time_table[i][j*2].tv_sec == 0 && time_table[i][j*2].tv_nsec == 0) time_table_dbl[i][j*2] = 0;
+            else{
+                time_table_dbl[i][j*2] = dtime_ms(&(time_table[i][j*2]),&(sched_table[0][0]));
+                time_table_dbl[i][j*2+1] = dtime_ms(&(time_table[i][j*2+1]),&(sched_table[0][0]));
+                lens[i]++;
+            }
         }
     }
 
-    report_times(N_FUNCTIONS,N_SAMPLES+1,sched_table_dbl,time_table_dbl,"\t\t");
+    report_times(N_FUNCTIONS,N_SAMPLES+1,lens,sched_table_dbl,time_table_dbl,"\t\t");
 
     printf("Ending main thread\n");
 
