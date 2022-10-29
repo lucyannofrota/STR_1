@@ -7,7 +7,6 @@ double timespec_to_double_ms(struct timespec *time){
 void print_table(struct timespec *tab,int M, int N, char *prefix){
     double max_values[M];
 
-    // printf("Val: %3.5f\n",timespec_to_double_ms(*( tab + (0*N + 0)*sizeof(struct timespec) )));
 
     // Max values initialization
     int i, j;
@@ -154,7 +153,7 @@ void report_times(int M, int N, int *r_samp, double sched_tab[][N], double time_
 
     // Max Values
     float min[M], max[M];
-    printf("M: %i\n",M);
+    // printf("M: %i\n",M);
     for(i = 0; i < M; i++){
         min[i] = 1e9; max[i] = -1e9;
         for(j = 0; j < r_samp[i]/*N-1*/; j++){

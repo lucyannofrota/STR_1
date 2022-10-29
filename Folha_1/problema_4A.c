@@ -89,7 +89,16 @@ void *thread_start(void *arg){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[0]), NULL);
     printf("Th%i [Running...]\n",thr_arg->thread_number);
 
+    int prio_chang = 0;
+
     for(i = 0; i < N_SAMPLES; i++){
+        if(i*thr_arg->ms_period > 1950 && !prio_chang){
+            prio_chang = 1;
+            if(thr_arg->thread_number == 1) change_thread_priority(pthread_self(),sched_get_priority_max(SCHED_FIFO)-2);
+            if(thr_arg->thread_number == 2) change_thread_priority(pthread_self(),sched_get_priority_max(SCHED_FIFO)-1);
+            if(thr_arg->thread_number == 3) change_thread_priority(pthread_self(),sched_get_priority_max(SCHED_FIFO)-0);
+            printf("thread %i attr:\n",thr_arg->thread_number); display_thread_attr(pthread_self(), "\t"); printf("\n");
+        }
         if(N_TIME <= i*thr_arg->ms_period) {
             // printf("N_TIME: %i, TIME: %i\n",N_TIME,i*thr_arg->ms_period);
             const struct timespec zer = {0,0};

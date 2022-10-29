@@ -14,9 +14,9 @@
 
 // void set_pthread_sched_attr(pthread_t thread, pthread_attr_t * attr);
 
-void thread_configs(pthread_attr_t *attr,int priority_mod);
+void thread_configs(pthread_attr_t *attr, int setaffinity, int sched_type,int priority_mod);
 
-void change_thread_priority(pthread_attr_t *attr,int priority_mod);
+void change_thread_priority(pthread_t thread,int priority);
 
 void set_thread_configs(pthread_t thread, cpu_set_t *cpu_set,pthread_attr_t *attr);
 

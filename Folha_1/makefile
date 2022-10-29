@@ -6,7 +6,7 @@ DBGCFLAGS = -g3 -O0 -DDEBUG
 
 AUX_OBJS_NAMES = pthread_aux print_aux
 
-PROBLEMS_NAMES = problema_1 problema_3 example
+PROBLEMS_NAMES = problema_1 problema_3 problema_4A problema_4B1 problema_4B2 problema_5 problema_6
 
 define generate_object
 	echo "\nGenerating $(2).o"

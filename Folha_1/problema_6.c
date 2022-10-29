@@ -135,7 +135,7 @@ int main(){
 
     pthread_attr_t attr1,attr2,attr3;
     
-    thread_configs(&attr1,1,SCHED_FIFO,0); thread_configs(&attr2,1,SCHED_FIFO,-1); thread_configs(&attr3,1,SCHED_FIFO,-2);
+    thread_configs(&attr1,1,SCHED_RR,0); thread_configs(&attr2,1,SCHED_RR,0); thread_configs(&attr3,1,SCHED_RR,0);
 
     printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 

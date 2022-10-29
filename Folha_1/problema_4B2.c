@@ -78,7 +78,7 @@ double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
 void *thread_start(void *arg){
     struct thread_arg *thr_arg = arg;
 
-    printf("thread %i attr:\n",thr_arg->thread_number); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    // printf("thread %i attr:\n",thr_arg->thread_number); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
     printf("Th%i Wainting other threads\n",thr_arg->thread_number);
 
@@ -89,7 +89,16 @@ void *thread_start(void *arg){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[0]), NULL);
     printf("Th%i [Running...]\n",thr_arg->thread_number);
 
+    // int prio_chang = 0;
+
     for(i = 0; i < N_SAMPLES; i++){
+        // if(i*thr_arg->ms_period > 1950 && !prio_chang){
+        //     prio_chang = 1;
+        //     if(thr_arg->thread_number == 1) change_thread_priority(pthread_self(),sched_get_priority_max(SCHED_FIFO)-2);
+        //     if(thr_arg->thread_number == 2) change_thread_priority(pthread_self(),sched_get_priority_max(SCHED_FIFO)-1);
+        //     if(thr_arg->thread_number == 3) change_thread_priority(pthread_self(),sched_get_priority_max(SCHED_FIFO)-0);
+        //     printf("thread %i attr:\n",thr_arg->thread_number); display_thread_attr(pthread_self(), "\t"); printf("\n");
+        // }
         if(N_TIME <= i*thr_arg->ms_period) {
             // printf("N_TIME: %i, TIME: %i\n",N_TIME,i*thr_arg->ms_period);
             const struct timespec zer = {0,0};
@@ -114,13 +123,13 @@ int main(){
     printf("Process PID: %i\n",getpid());
 
     int s;
-    cpu_set_t cpu_set;
-    pthread_t main_thread = pthread_self();
+    // cpu_set_t cpu_set;
+    // pthread_t main_thread = pthread_self();
 
     // Alterando atributos do thread main
 
-    CPU_ZERO(&cpu_set);
-    CPU_SET(0,&cpu_set);
+    // CPU_ZERO(&cpu_set);
+    // CPU_SET(0,&cpu_set);
 
     // // Utilizar for para alocar mais cpu's
     
@@ -128,16 +137,16 @@ int main(){
     printf("##Thread configs##\n");
     printf("##################\n\n\n");
 
-    printf("main_thread attr Initial:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    printf("main_thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    s = pthread_setaffinity_np(main_thread,sizeof(cpu_set), &cpu_set);
-    if (s != 0) handle_error_en(s, "pthread_attr_destroy");
+    // s = pthread_setaffinity_np(main_thread,sizeof(cpu_set), &cpu_set);
+    // if (s != 0) handle_error_en(s, "pthread_attr_destroy");
 
     pthread_attr_t attr1,attr2,attr3;
     
-    thread_configs(&attr1,1,SCHED_FIFO,0); thread_configs(&attr2,1,SCHED_FIFO,-1); thread_configs(&attr3,1,SCHED_FIFO,-2);
+    thread_configs(&attr1,0,SCHED_FIFO,-2); thread_configs(&attr2,0,SCHED_FIFO,-1); thread_configs(&attr3,0,SCHED_FIFO,0);
 
-    printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    // printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
     struct timespec time_table[N_FUNCTIONS][N_SAMPLES*2];
     struct timespec sched_table[N_FUNCTIONS][N_SAMPLES+1];
