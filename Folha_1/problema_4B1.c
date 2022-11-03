@@ -12,24 +12,15 @@
 #define GROUP 4
 
 #include <stdio.h>
-#include <math.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-
-#include "func/func.h"
-
+#include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include "func/func.h"
 #include "aux_libs/pthread_aux.h"
-
-#include <sched.h>
-#include <assert.h>
-
-#include "math.h"
-
 #include "aux_libs/print_aux.h"
 
 
@@ -186,7 +177,7 @@ int main(){
 
     // Aguardando o termino do thread
 
-    printf("\n###### 3 ######\n");
+    printf("\n###### 4B1 ######\n");
 
     printf("\n\t###########\n");
     printf("\t##Results##\n");

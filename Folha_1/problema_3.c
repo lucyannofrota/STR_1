@@ -12,24 +12,15 @@
 #define GROUP 4
 
 #include <stdio.h>
-#include <math.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-
-#include "func/func.h"
-
+#include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include "func/func.h"
 #include "aux_libs/pthread_aux.h"
-
-#include <sched.h>
-#include <assert.h>
-
-#include "math.h"
-
 #include "aux_libs/print_aux.h"
 
 
@@ -131,7 +122,7 @@ int main(){
     printf("main_thread attr Initial:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
     s = pthread_setaffinity_np(main_thread,sizeof(cpu_set), &cpu_set);
-    if (s != 0) handle_error_en(s, "pthread_attr_destroy");
+    if (s != 0) handle_error_en(s, "pthread_setaffinity_np");
 
     pthread_attr_t attr1,attr2,attr3;
     

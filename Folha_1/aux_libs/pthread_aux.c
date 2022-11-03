@@ -44,8 +44,6 @@ void change_thread_priority(pthread_t thread,int priority){
     if (s != 0) handle_error_en(s, "pthread_setschedparam");
 }
 
-
-
 void display_thread_attr(pthread_t thread, char *prefix){
     // https://man7.org/linux/man-pages/man3/pthread_getattr_np.3.html
     int s;

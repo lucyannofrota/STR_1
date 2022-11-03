@@ -47,6 +47,17 @@ void clk_wait(double m_sec){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
 }
 
+void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
+    // from <sys/time.h>
+    // define timeradd(a, b, result)
+    result->tv_sec = tim_1->tv_sec + tim_2->tv_sec;
+    result->tv_nsec = tim_1->tv_nsec + tim_2->tv_nsec;
+    if(result->tv_nsec >= 1e9){
+        result->tv_sec++;
+        result->tv_nsec -= 1e9;
+    }
+}
+
 struct timespec sub_timespec(struct timespec tim_1,struct timespec tim_2){
     struct timespec result;
     result.tv_sec = tim_1.tv_sec - tim_2.tv_sec;
@@ -58,18 +69,32 @@ struct timespec sub_timespec(struct timespec tim_1,struct timespec tim_2){
     return result;
 }
 
-void calc_func_ripple(void (*func)(int,int), struct timespec dtime_spec[N_SAMPLES]){
+void calc_func_ripple(void (*func)(void), struct timespec dtime_spec[N_SAMPLES]){
     int i;
     struct timespec time1 = {0,0}, time2 = {0,0};
 
     for(i = 0; i < N_SAMPLES; i++){
         clock_gettime(CLOCK_REALTIME, &time1);
-        func(CLASS,GROUP);
+        func();
         clock_gettime(CLOCK_REALTIME, &time2);
         dtime_spec[i] = sub_timespec(time2,time1);
         clk_wait(5); // 5 ms
     }
 }
+
+void sim_func(int time_us,int faction){
+    struct timespec period = {0,time_us*1e3}, time;
+    for(int i = 0; i < time_us/faction; i++){
+        // print_timespec(time,"\t\t");
+        clock_gettime(CLOCK_REALTIME, &time);
+        add_timespec(&time,&period,&time);
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &period, NULL);
+    }
+}
+
+void f1_(void){sim_func(35e6,1000);}
+void f2_(void){sim_func(55e6,1000);}
+void f3_(void){sim_func(85e6,1000);}
 
 
 static void *thread_start(void *arg){
@@ -78,9 +103,9 @@ static void *thread_start(void *arg){
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    calc_func_ripple(f1,(*tab)[0]);
-    calc_func_ripple(f2,(*tab)[1]);
-    calc_func_ripple(f3,(*tab)[2]);
+    calc_func_ripple(f1_,(*tab)[0]);
+    calc_func_ripple(f2_,(*tab)[1]);
+    calc_func_ripple(f3_,(*tab)[2]);
 
     return NULL;
 }
@@ -131,7 +156,7 @@ int main(){
     // Aguardando o termino do thread
     pthread_join(thr1,NULL);
 
-    printf("###### 1 ######\n");
+    printf("###### 5B ######\n");
 
     printf("\n\t###########\n");
     printf("\t##Results##\n");

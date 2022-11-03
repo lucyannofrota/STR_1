@@ -12,12 +12,6 @@ void print_table(struct timespec *tab,int M, int N, char *prefix);
 
 void print_timespec(struct timespec t,char *prefix);
 
-void print_table_double(int M, int N, double tab[][N], char *prefix);
-
-// static void _table_times(int M, int N, double sched_tab[][N], double time_tab[][N], char *prefix);
-
-// static void _max_metrics(int M, int N, double sched_tab[][N], double time_tab[][N], char *prefix);
-
 void report_times(int M, int N, int *r_samp, double sched_tab[][N], double time_tab[][N], char *prefix);
 
 #endif // PRINT_FUNCTIONS_H__

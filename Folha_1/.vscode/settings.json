@@ -19,7 +19,11 @@
         "resource.h": "c",
         "pthread_aux.h": "c",
         "math.h": "c",
-        "wait.h": "c"
+        "wait.h": "c",
+        "print_aux.h": "c",
+        "sys_errlist.h": "c",
+        "sched.h": "c",
+        "assert.h": "c"
     },
     "c-cpp-compile-run.c-flags": "-Wall -Wextra -D_REENTRANT -lpthread -lrt",
     "c-cpp-compile-run.cpp-flags": "-Wall -Wextra",
