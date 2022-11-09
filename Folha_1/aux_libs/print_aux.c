@@ -107,7 +107,7 @@ void report_times(int M, int N, int *r_samp, double sched_tab[][N], double time_
     centerText(l2," ",l2_size);
     // centerText(c," ",c_size);
     centerText(r2," ",r2_size-1);
-    centerText(r,"RT = AT - ST",r_size);
+    centerText(r,"RT = ET - AT",r_size);
     printf("%s|   |%s||%s||%s||%s|\n",prefix,l,l2,r2,r);
     // Core
     l_size-= 0; l2_size-=1; r2_size-=2; r_size-=1;
