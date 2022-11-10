@@ -1,32 +1,30 @@
+*.o
 
-Folha_1/hello
+problema_1
+problema_3
+problema_4A
+problema_4B1
+problema_4B2
+problema_5
+problema_5A
+problema_5B
+problema_6
 
-Folha_1/hello.c
 
-Folha_1/test
 
-Folha_1/test.c
+P1_OUTPUT.txt
+P3_OUTPUT.txt
+P4A_OUTPUT.txt
+P4B1_OUTPUT.txt
+P4B2_OUTPUT.txt
+P5A_OUTPUT.txt
+P5B_OUTPUT.txt
+P6_OUTPUT.txt
 
-Folha_1/P1_OUTPUT.txt
 
-Folha_1/problema_1
 
-Folha_1/problema_3
+actstr23_1_unlocked.pdf
 
-Folha_1/P3_OUTPUT.txt
+P6_OUTPUT.txt
 
-Folha_1/example
-
-Folha_1/*.o
-
-Folha_1/problema_4A
-
-Folha_1/problema_4B1
-
-Folha_1/problema_4B2
-
-Folha_1/problema_5
-
-Folha_1/problema_6
-
-*.txt
+problema_4B

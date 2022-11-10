@@ -1,24 +1,20 @@
 #define N_FUNCTIONS 3
 #define N_SAMPLES 128
-
 #define PRINT_MULTP 1000/1000000000.0
-
 #define _GNU_SOURCE
-
-#define CLASS 2
-#define GROUP 4
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <unistd.h>
-#include <sched.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+// #include <pthread.h>
+// #include <sched.h>
+// #include <sys/time.h>
+// #include <sys/resource.h>
 
 #include "func/func.h"
 #include "aux_libs/pthread_aux.h"
-#include "aux_libs/print_aux.h"
+// #include "aux_libs/print_aux.h"
+#include "aux_libs/aux_functions.h"
 
 
 #define handle_error_en(en, msg) \
@@ -30,47 +26,6 @@
 //     long     tv_nsec;       /* nanoseconds */
 // };
 
-void clk_wait(double m_sec){
-    // https://stackoverflow.com/questions/20332382/linux-sleeping-with-clock-nanosleep
-
-    struct timespec deadline;
-    clock_gettime(CLOCK_REALTIME, &deadline);
-
-    // Add the time you want to sleep
-    deadline.tv_nsec += (long) ceil(m_sec*1000000000/1000.0);
-
-    // Normalize the time to account for the second boundary
-    if(deadline.tv_nsec >= 1000000000) {
-        deadline.tv_nsec -= 1000000000;
-        deadline.tv_sec++;
-    }
-    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
-}
-
-struct timespec sub_timespec(struct timespec tim_1,struct timespec tim_2){
-    struct timespec result;
-    result.tv_sec = tim_1.tv_sec - tim_2.tv_sec;
-    result.tv_nsec = tim_1.tv_nsec - tim_2.tv_nsec;
-    if(result.tv_nsec < 0){
-        result.tv_sec -= 1;
-        result.tv_nsec += 1000000000;
-    }
-    return result;
-}
-
-void calc_func_ripple(void (*func)(int,int), struct timespec dtime_spec[N_SAMPLES]){
-    int i;
-    struct timespec time1 = {0,0}, time2 = {0,0};
-
-    for(i = 0; i < N_SAMPLES; i++){
-        clock_gettime(CLOCK_REALTIME, &time1);
-        func(CLASS,GROUP);
-        clock_gettime(CLOCK_REALTIME, &time2);
-        dtime_spec[i] = sub_timespec(time2,time1);
-        clk_wait(5); // 5 ms
-    }
-}
-
 
 static void *thread_start(void *arg){
 
@@ -78,9 +33,9 @@ static void *thread_start(void *arg){
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    calc_func_ripple(f1,(*tab)[0]);
-    calc_func_ripple(f2,(*tab)[1]);
-    calc_func_ripple(f3,(*tab)[2]);
+    calc_func_ripple(f1,N_SAMPLES,(*tab)[0]);
+    calc_func_ripple(f2,N_SAMPLES,(*tab)[1]);
+    calc_func_ripple(f3,N_SAMPLES,(*tab)[2]);
 
     return NULL;
 }

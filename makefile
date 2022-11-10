@@ -4,9 +4,9 @@ FLAGS = -lpthread -lrt -lm -D_REENTRANT
 
 DBGCFLAGS = -O2 -Wall -Wextra #-DDEBUG -g3 -O0
 
-AUX_OBJS_NAMES = pthread_aux print_aux
+AUX_OBJS_NAMES = pthread_aux aux_functions
 
-PROBLEMS_NAMES = problema_1 problema_3 problema_4A problema_4B1 problema_4B2 problema_5A problema_5B problema_6
+PROBLEMS_NAMES = problema_1 problema_3 problema_4A problema_4B problema_5A problema_5B problema_6
 
 define generate_object
 	@echo "\n|Generating $(2).o"

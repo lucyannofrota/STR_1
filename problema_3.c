@@ -21,7 +21,7 @@
 
 #include "func/func.h"
 #include "aux_libs/pthread_aux.h"
-#include "aux_libs/print_aux.h"
+#include "aux_libs/aux_functions.h"
 
 
 #define handle_error_en(en, msg) \
@@ -40,42 +40,7 @@ struct thread_arg{
     struct timespec *time_ref;
     struct timespec *sched_times;
     struct timespec *time_table;
-    int task_time;
 };
-
-void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
-    // from <sys/time.h>
-    // define timeradd(a, b, result)
-    result->tv_sec = tim_1->tv_sec + tim_2->tv_sec;
-    result->tv_nsec = tim_1->tv_nsec + tim_2->tv_nsec;
-    if(result->tv_nsec >= 1e9){
-        result->tv_sec++;
-        result->tv_nsec -= 1e9;
-    }
-}
-
-double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
-    // from <sys/time.h>
-    // # define timersub(a, b, result)
-    struct timespec result;
-    result.tv_sec = tim_1->tv_sec - tim_2->tv_sec;
-    result.tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
-    if(result.tv_nsec < 0 && result.tv_sec > 0){
-        result.tv_sec --;
-        result.tv_nsec += 1e9;
-    }
-    return (result.tv_sec*1e9 + ((long int)result.tv_nsec))/1000000.0;
-}
-
-void sim_func(int time_us,int faction){
-    struct timespec period = {0,time_us*1e3}, time;
-    for(int i = 0; i < time_us/faction; i++){
-        // print_timespec(time,"\t\t");
-        clock_gettime(CLOCK_REALTIME, &time);
-        add_timespec(&time,&period,&time);
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &period, NULL);
-    }
-}
 
 void *thread_start(void *arg){
     struct thread_arg *thr_arg = arg;
@@ -91,8 +56,6 @@ void *thread_start(void *arg){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[0]), NULL);
     printf("Th%i [Running...]\n",thr_arg->thread_number);
 
-    const int faction = 1000;
-
     for(i = 0; i < N_SAMPLES; i++){
         if(N_TIME <= i*thr_arg->ms_period) {
             const struct timespec zer = {0,0};
@@ -101,9 +64,9 @@ void *thread_start(void *arg){
         }
         else{
             clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &(thr_arg->sched_times[i+1]), NULL);
-            clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i])); // 0,2,4,6,8,10
-            thr_arg->func(thr_arg->task_time,faction);
-            clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i])); // 1,3,5,7,9,11
+            clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[2*i]));
+            thr_arg->func(CLASS,GROUP);
+            clock_gettime(CLOCK_REALTIME, &(thr_arg->time_table[1+2*i]));
         }
     }
 
@@ -155,9 +118,9 @@ int main(){
     clock_gettime(CLOCK_REALTIME, &time_ref);
 
     struct thread_arg thr_arg[3] = {
-        {1,100,sim_func,&time_ref,sched_table[0],time_table[0],35e6},
-        {2,200,sim_func,&time_ref,sched_table[1],time_table[1],55e6},
-        {3,300,sim_func,&time_ref,sched_table[2],time_table[2],85e6}
+        {1,100,f1,&time_ref,sched_table[0],time_table[0]},
+        {2,200,f2,&time_ref,sched_table[1],time_table[1]},
+        {3,300,f3,&time_ref,sched_table[2],time_table[2]}
     };
 
     // https://docs.oracle.com/cd/E19455-01/806-5257/6je9h032r/index.html
@@ -179,7 +142,7 @@ int main(){
 
     // Aguardando o termino do thread
 
-    printf("\n###### 5A ######\n");
+    printf("\n###### 3 ######\n");
 
     printf("\n\t###########\n");
     printf("\t##Results##\n");
@@ -202,7 +165,7 @@ int main(){
         }
     }
 
-    report_times(N_FUNCTIONS,N_SAMPLES+1,lens,sched_table_dbl,time_table_dbl,"\t\t");
+    report_times(N_FUNCTIONS,N_SAMPLES+1,lens,sched_table_dbl,time_table_dbl,NULL,"\t\t");
 
     printf("Ending main thread\n");
 

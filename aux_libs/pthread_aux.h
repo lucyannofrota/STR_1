@@ -16,7 +16,7 @@ void change_thread_priority(pthread_t thread,int priority);
 
 void display_thread_attr(pthread_t thread, char *prefix);
 
-void display_attr(pthread_attr_t attr, char *prefix);
+// void display_attr(pthread_attr_t attr, char *prefix);
 
 // https://man7.org/linux/man-pages/man3/pthread_attr_init.3.html
 // https://man7.org/linux/man-pages/man3/pthread_attr_destroy.3.html

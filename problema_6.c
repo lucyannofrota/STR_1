@@ -21,7 +21,7 @@
 
 #include "func/func.h"
 #include "aux_libs/pthread_aux.h"
-#include "aux_libs/print_aux.h"
+#include "aux_libs/aux_functions.h"
 
 
 #define handle_error_en(en, msg) \
@@ -41,30 +41,6 @@ struct thread_arg{
     struct timespec *sched_times;
     struct timespec *time_table;
 };
-
-void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
-    // from <sys/time.h>
-    // define timeradd(a, b, result)
-    result->tv_sec = tim_1->tv_sec + tim_2->tv_sec;
-    result->tv_nsec = tim_1->tv_nsec + tim_2->tv_nsec;
-    if(result->tv_nsec >= 1e9){
-        result->tv_sec++;
-        result->tv_nsec -= 1e9;
-    }
-}
-
-double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
-    // from <sys/time.h>
-    // # define timersub(a, b, result)
-    struct timespec result;
-    result.tv_sec = tim_1->tv_sec - tim_2->tv_sec;
-    result.tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
-    if(result.tv_nsec < 0 && result.tv_sec > 0){
-        result.tv_sec --;
-        result.tv_nsec += 1e9;
-    }
-    return (result.tv_sec*1e9 + ((long int)result.tv_nsec))/1000000.0;
-}
 
 void *thread_start(void *arg){
     struct thread_arg *thr_arg = arg;
@@ -190,7 +166,7 @@ int main(){
         }
     }
 
-    report_times(N_FUNCTIONS,N_SAMPLES+1,lens,sched_table_dbl,time_table_dbl,"\t\t");
+    report_times(N_FUNCTIONS,N_SAMPLES+1,lens,sched_table_dbl,time_table_dbl,NULL,"\t\t");
 
     printf("Ending main thread\n");
 
